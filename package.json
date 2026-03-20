@@ -10,27 +10,12 @@
   "files": [
     "dist/**/*",
     "bin/clawnet",
-    "cli/clawnet.js",
     "skill/**/*",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
-  ".env.example",
-  ".env.production.example"
-  ".npmignore"
-  "package.json"
-  "tsconfig.json"
-  "start.sh"
-  "scripts/setup.sh"
-  "skill/scripts/*.js",
-  "skill/scripts/*.ts"
-  "cli/clawnet.js"
-  "bin/clawnet"
-  "src/adapters/*.ts",
-  "src/*.ts"
-  "!src/*.ts.backup",
-  "!src/*.ts.broken"
-  "!src/**/*.test.ts"
+    "CHANGELOG.md",
+    ".env.example",
+    ".env.production.example"
   ],
   "scripts": {
     "build": "tsc",
@@ -50,7 +35,7 @@
     "wechat",
     "telegram",
     "websocket",
-    "graph"
+    "graph",
     "topology"
   ],
   "author": "ClawNet Team",
