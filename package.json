@@ -1,27 +1,68 @@
 {
   "name": "clawnet-mvp",
-  "version": "0.4.1",
-  "description": "\u5173\u7cfb\u9a71\u52a8\u7684\u591a\u8282\u70b9\u667a\u80fd\u534f\u4f5c\u7f51\u7edc",
+  "version": "0.5.0",
+  "description": "关系驱动的多节点智能协作网络 - Multi-node intelligent collaboration network based on relation graph",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "clawnet": "./bin/clawnet"
   },
+  "files": [
+    "dist/**/*",
+    "bin/clawnet",
+    "cli/clawnet.js",
+    "skill/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ".env.example",
+  ".env.production.example"
+  ".npmignore"
+  "package.json"
+  "tsconfig.json"
+  "start.sh"
+  "scripts/setup.sh"
+  "skill/scripts/*.js",
+  "skill/scripts/*.ts"
+  "cli/clawnet.js"
+  "bin/clawnet"
+  "src/adapters/*.ts",
+  "src/*.ts"
+  "!src/*.ts.backup",
+  "!src/*.ts.broken"
+  "!src/**/*.test.ts"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "node dist/test.js",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
-    "cli": "node cli/clawnet.js"
+    "cli": "node cli/clawnet.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "relation-network",
     "ai-bot",
     "routing",
-    "permission"
+    "permission",
+    "multi-node",
+    "collaboration",
+    "wechat",
+    "telegram",
+    "websocket",
+    "graph"
+    "topology"
   ],
-  "author": "ClawNet",
+  "author": "ClawNet Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bsheepcoder/clawnet.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Bsheepcoder/clawnet/issues"
+  },
+  "homepage": "https://github.com/Bsheepcoder/clawnet#readme",
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
     "@types/cors": "^2.8.0",
@@ -36,5 +77,8 @@
     "cors": "^2.8.0",
     "express": "^4.18.0",
     "ws": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
