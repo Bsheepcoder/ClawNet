@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-03-20
+
+### Major Changes
+- 🎉 **Complete CLI overhaul** - Inspired by OpenClaw and OpenCode design
+- 🎮 **Dual mode support** - Traditional CLI + Interactive CLI
+- 📦 **Command grouping** - node/relation/config commands
+- ⚡ **Global options** - --url, --token, --json, --no-color
+- 🎨 **ASCII Art banner** - Professional look with figlet
+- 🔧 **Configuration persistence** - Auto-save to ~/.clawnetrc
+
+### New Commands
+- `clawnet init` - Initialize configuration
+- `clawnet quick` - Quick actions menu
+- `clawnet docs` - Open documentation
+- `clawnet config` - Configuration management
+- `clawnet interactive` (alias: `i`) - Interactive mode
+
+### Command Aliases
+- `nodes` = `node`
+- `node ls` = `node list`
+- `node rm` = `node delete`
+- `relations` = `relation`
+- `relation ls` = `relation list`
+- `i` = `interactive`
+
+### Enhanced Features
+- ✅ Colored output with chalk
+- ✅ Progress spinners with ora
+- ✅ Better error messages
+- ✅ Confirmation dialogs
+- ✅ JSON output support
+- ✅ Grouped menus in interactive mode
+
+### Dependencies
+- figlet: ^1.7.0 (ASCII Art)
+
+### Documentation
+- CLI-UPGRADE.md - Detailed upgrade guide
+- Updated CLI-GUIDE.md with new commands
+
+### Breaking Changes
+- Command structure changed to grouped format
+- Old flat commands still work but deprecated
+
 ## [0.5.3] - 2026-03-20
 
 ### Added
