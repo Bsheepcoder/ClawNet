@@ -4,6 +4,8 @@
 
 **🤖 Relation-Driven Multi-Node Intelligent Collaboration Network**
 
+**[中文版](README_CN.md)** | **English**
+
 [![npm version](https://badge.fury.io/js/@husile%2Fclawnet.svg)](https://www.npmjs.com/package/@husile/clawnet)
 [![npm downloads](https://img.shields.io/npm/dm/@husile/clawnet.svg)](https://www.npmjs.com/package/@husile/clawnet)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
