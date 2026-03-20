@@ -1,16 +1,26 @@
 # Dependencies
 node_modules/
+
+# Build output
 dist/
+*.js
+!cli/*.js
+!bin/*
+*.d.ts
+*.js.map
 
 # Environment
 .env
 .env.local
 .env.production
 .env.wechat
+!.env.example
+!.env.production.example
 
 # Database
 *.db
 *.db-journal
+*.sqlite
 
 # Logs
 *.log
@@ -20,23 +30,11 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Docs (local only)
+# Development
 docs/
-
-# Sensitive files
-.wechat-token
-wechat-messages.json
-
-# Backup files
-*.backup
-*.broken
+*.txt
 *.bak
 
-# Temporary files
-*.tmp
-*.swp
-*~
-
-# Development notes
-*.txt
-!README.txt
+# Sensitive
+.wechat-token
+wechat-messages.json
