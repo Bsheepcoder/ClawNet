@@ -1,0 +1,599 @@
+/**
+ * REST API 服务器（增强版）
+ * + WebSocket 实时推送
+ * + Token 认证
+ * + 微信公众号集成
+ */
+
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import { createServer } from 'http';
+import { ClawNet } from './index';
+import { Storage } from './storage';
+import { RelationType, Permission } from './types';
+import { WebSocketService } from './websocket';
+import { authMiddleware, generateToken } from './auth';
+import { WeChatAdapter, WeChatConfig, getWeChatConfig } from './adapters/wechat-adapter';
+
+const app = express();
+const server = createServer(app);
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
+
+// 基础中间件
+app.use(cors());
+app.use(express.json());
+app.use(express.text({ type: ['text/xml', 'application/xml'] }));  // 支持XML文本
+
+// 初始化
+const storage = new Storage('clawnet.db');
+const clawnet = new ClawNet();
+const wsService = new WebSocketService(server);
+
+// 加载已有数据
+storage.getAllNodes().forEach(node => {
+  clawnet.addNode(node);
+});
+storage.getAllRelations().forEach(relation => {
+  clawnet.addRelation(
+    relation.from,
+    relation.to,
+    relation.type,
+    relation.permissions
+  );
+});
+
+// ========== 微信接口（新路由规范） ==========
+// ========== 微信接口（必须在认证中间件之前！） ==========
+
+let wechatAdapter: WeChatAdapter | null = null;
+
+// 初始化微信适配器
+const wechatConfig = getWeChatConfig();
+
+if (wechatConfig.appId && wechatConfig.appSecret) {
+  wechatAdapter = new WeChatAdapter(wechatConfig, clawnet);
+  wechatAdapter.initialize().catch(err => {
+    console.error('❌ 微信适配器初始化失败:', err);
+  });
+}
+
+// 微信公众号节点ID
+const WECHAT_NODE_ID = `wechat-mp-${wechatConfig.appId || 'default'}`;
+
+// 微信接口：验证（GET）和消息接收（POST）共用同一个URL
+app.get(`/clawnet/node/${WECHAT_NODE_ID}/message`, (req: Request, res: Response) => {
+  if (!wechatAdapter) {
+    console.warn('⚠️  微信适配器未配置');
+    return res.status(200).send('error');
+  }
+  
+  const { signature, timestamp, nonce, echostr } = req.query;
+  
+  if (wechatAdapter.verifySignature(
+    { signature, timestamp, nonce, echostr },
+    signature as string
+  )) {
+    console.log('✅ 微信验证成功');
+    res.status(200).send(echostr);
+  } else {
+    console.log('❌ 微信验证失败');
+    res.status(200).send('error');
+  }
+});
+
+app.post(`/clawnet/node/${WECHAT_NODE_ID}/message`, async (req: Request, res: Response) => {
+  if (!wechatAdapter) {
+    return res.status(200).send('error');
+  }
+  
+  try {
+    // 获取原始XML字符串
+    const xmlData = typeof req.body === 'string' 
+      ? req.body 
+      : (req as any).rawBody || JSON.stringify(req.body);
+    
+    console.log('📩 收到微信消息');
+    console.log('📝 XML数据类型:', typeof xmlData);
+    console.log('📝 XML数据:', xmlData.substring(0, 200) + '...');
+    
+    const reply = await wechatAdapter.handleMessage(xmlData);
+    
+    console.log('📤 返回给微信的内容:');
+    console.log(reply);
+    console.log('📤 内容类型:', typeof reply);
+    console.log('📤 内容长度:', reply.length);
+    
+    res.set('Content-Type', 'application/xml');
+    res.status(200).send(reply);
+  } catch (error: any) {
+    console.error('❌ 处理微信消息失败:', error);
+    res.status(200).send('');
+  }
+});
+// ========== 认证中间件（微信接口之后） ==========
+
+app.use(authMiddleware);
+
+// ========== WebSocket 处理器 ==========
+
+clawnet.registerHandler('websocket-broadcaster', async (event) => {
+  const authorizedTargets = clawnet.getPermissionSystem()
+    .getAuthorizedTargets(event.from, 'read');
+  const sentTo = wsService.sendToNodes(authorizedTargets, event);
+  console.log(`📡 Event ${event.type} sent to ${sentTo.length} nodes via WebSocket`);
+});
+
+// ========== 节点 API ==========
+
+app.post('/nodes', (req: Request, res: Response) => {
+  try {
+    const { id, type, name, metadata, config } = req.body;
+    
+    const nodeData: any = { id, type, name, metadata };
+    if (config) {
+      nodeData.config = config;  // 支持创建时设置config
+    }
+    
+    const node = clawnet.addNode(nodeData);
+    storage.saveNode(node);
+    res.json({ success: true, data: node });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/nodes/:id', (req: Request, res: Response) => {
+  const node = clawnet.getNode(req.params.id);
+  if (!node) {
+    res.status(404).json({ success: false, error: 'Node not found' });
+    return;
+  }
+  res.json({ success: true, data: node });
+});
+
+app.get('/nodes', (req: Request, res: Response) => {
+  const nodes = clawnet.getAllNodes();
+  res.json({ success: true, data: nodes });
+});
+
+app.delete('/nodes/:id', (req: Request, res: Response) => {
+  clawnet.removeNode(req.params.id);
+  storage.deleteNode(req.params.id);
+  res.json({ success: true });
+});
+
+// ========== 关系 API ==========
+
+app.post('/relations', (req: Request, res: Response) => {
+  try {
+    const { from, to, type, permissions, ttl, expiresAt, isTemporary } = req.body;
+    
+    const relation = clawnet.addRelation(
+      from,
+      to,
+      type as RelationType,
+      permissions as Permission[],
+      { ttl, expiresAt, isTemporary }
+    );
+    
+    storage.saveRelation(relation);
+    res.json({ success: true, data: relation });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/relations/node/:nodeId', (req: Request, res: Response) => {
+  const relations = clawnet.getRelations(req.params.nodeId);
+  res.json({ success: true, data: relations });
+});
+
+app.get('/relations', (req: Request, res: Response) => {
+  const relations = clawnet.getAllRelations();
+  res.json({ success: true, data: relations });
+});
+
+app.delete('/relations/:id', (req: Request, res: Response) => {
+  clawnet.removeRelation(req.params.id);
+  storage.deleteRelation(req.params.id);
+  res.json({ success: true });
+});
+
+// ========== 关系请求 API（遵循关系宪章） ==========
+
+// 发起关系请求
+app.post('/relations/request', (req: Request, res: Response) => {
+  try {
+    const { from, to, type, permissions, message } = req.body;
+    
+    const request = clawnet.requestRelation(
+      from,
+      to,
+      type as RelationType,
+      permissions as Permission[],
+      message
+    );
+    
+    console.log(`📧 关系请求已创建: ${from} →(${type})→ ${to}`);
+    res.json({ success: true, data: request });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 获取待处理的请求
+app.get('/relations/pending/:nodeId', (req: Request, res: Response) => {
+  const requests = clawnet.getPendingRequests(req.params.nodeId);
+  res.json({ success: true, data: requests });
+});
+
+// 获取发出的请求
+app.get('/relations/sent/:nodeId', (req: Request, res: Response) => {
+  const requests = clawnet.getSentRequests(req.params.nodeId);
+  res.json({ success: true, data: requests });
+});
+
+// 接受关系请求
+app.post('/relations/request/:requestId/accept', (req: Request, res: Response) => {
+  try {
+    const { grantedPermissions, response } = req.body;
+    
+    const relation = clawnet.acceptRelationRequest(
+      req.params.requestId,
+      grantedPermissions,
+      response
+    );
+    
+    storage.saveRelation(relation);
+    console.log(`✅ 关系请求已接受: ${relation.id}`);
+    res.json({ success: true, data: relation });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 拒绝关系请求
+app.post('/relations/request/:requestId/reject', (req: Request, res: Response) => {
+  try {
+    const { reason } = req.body;
+    
+    clawnet.rejectRelationRequest(req.params.requestId, reason);
+    console.log(`❌ 关系请求已拒绝: ${req.params.requestId}`);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 取消关系请求
+app.post('/relations/request/:requestId/cancel', (req: Request, res: Response) => {
+  try {
+    const { reason } = req.body;
+    
+    clawnet.cancelRelationRequest(req.params.requestId, reason);
+    console.log(`🚫 关系请求已取消: ${req.params.requestId}`);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 撤销关系
+app.post('/relations/:relationId/revoke', (req: Request, res: Response) => {
+  try {
+    const { reason } = req.body;
+    
+    clawnet.revokeRelation(req.params.relationId, reason);
+    storage.deleteRelation(req.params.relationId);
+    console.log(`↩️ 关系已撤销: ${req.params.relationId}`);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 获取审计日志
+app.get('/audit-logs', (req: Request, res: Response) => {
+  const { actor, target, action, since, limit } = req.query;
+  
+  const logs = clawnet.getAuditLogs({
+    actor: actor as string,
+    target: target as string,
+    action: action as any,
+    since: since ? parseInt(since as string) : undefined,
+    limit: limit ? parseInt(limit as string) : undefined
+  });
+  
+  res.json({ success: true, data: logs });
+});
+
+// 获取请求统计
+app.get('/relations/stats', (req: Request, res: Response) => {
+  const stats = clawnet.getRequestStats();
+  res.json({ success: true, data: stats });
+});
+
+// ========== 临时关系 API ==========
+
+// 清理过期关系
+app.post('/relations/cleanup', (req: Request, res: Response) => {
+  try {
+    const result = clawnet.cleanupExpiredRelations();
+    
+    // 从存储中删除过期关系
+    result.expiredRelations.forEach(relation => {
+      storage.deleteRelation(relation.id);
+    });
+    
+    console.log(`🧹 清理了 ${result.cleaned} 个过期关系`);
+    res.json({ 
+      success: true, 
+      data: {
+        cleaned: result.cleaned,
+        expiredRelations: result.expiredRelations.map(r => ({
+          id: r.id,
+          from: r.from,
+          to: r.to,
+          type: r.type,
+          expiredAt: r.expiresAt
+        }))
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取即将过期的关系
+app.get('/relations/expiring', (req: Request, res: Response) => {
+  try {
+    const within = req.query.within ? parseInt(req.query.within as string) : 3600000; // 默认1小时
+    const relations = clawnet.getExpiringRelations(within);
+    res.json({ success: true, data: relations });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 延长关系有效期
+app.post('/relations/:relationId/extend', (req: Request, res: Response) => {
+  try {
+    const { ttl } = req.body; // 延长的毫秒数
+    
+    if (!ttl || ttl <= 0) {
+      res.status(400).json({ success: false, error: 'Invalid TTL' });
+      return;
+    }
+    
+    const relation = clawnet.extendRelation(req.params.relationId, ttl);
+    storage.saveRelation(relation);
+    
+    console.log(`⏰ 关系已延长: ${relation.id}, 新过期时间: ${new Date(relation.expiresAt!).toISOString()}`);
+    res.json({ success: true, data: relation });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 检查关系是否有效
+app.get('/relations/:relationId/valid', (req: Request, res: Response) => {
+  try {
+    const isValid = clawnet.isRelationValid(req.params.relationId);
+    res.json({ success: true, data: { relationId: req.params.relationId, isValid } });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ========== 权限 API ==========
+
+app.get('/permissions/check', (req: Request, res: Response) => {
+  const { node, target, action } = req.query;
+  
+  if (!node || !target || !action) {
+    res.status(400).json({ 
+      success: false, 
+      error: 'Missing parameters: node, target, action' 
+    });
+    return;
+  }
+
+  const allowed = clawnet.checkPermission(
+    node as string,
+    target as string,
+    action as Permission
+  );
+  
+  res.json({ 
+    success: true, 
+    data: { 
+      node, 
+      target, 
+      action, 
+      allowed 
+    } 
+  });
+});
+
+// ========== 节点配置 API ==========
+
+// 深度合并工具函数
+function deepMerge(target: any, source: any): any {
+  const output = { ...target };
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      output[key] = deepMerge(target[key] || {}, source[key]);
+    } else {
+      output[key] = source[key];
+    }
+  }
+  return output;
+}
+
+// 获取节点配置
+app.get('/nodes/:id/config', (req: Request, res: Response) => {
+  const node = clawnet.getNode(req.params.id);
+  if (!node) {
+    res.status(404).json({ success: false, error: 'Node not found' });
+    return;
+  }
+  res.json({ success: true, data: node.config || {} });
+});
+
+// 更新节点配置（完整替换）
+app.put('/nodes/:id/config', (req: Request, res: Response) => {
+  try {
+    const nodeId = req.params.id;
+    const node = clawnet.getNode(nodeId);
+    if (!node) {
+      res.status(404).json({ success: false, error: 'Node not found' });
+      return;
+    }
+    
+    const updatedNode = clawnet.updateNode(nodeId, { config: req.body });
+    storage.saveNode(updatedNode);
+    res.json({ success: true, data: updatedNode.config });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// 部分更新节点配置（合并）
+app.patch('/nodes/:id/config', (req: Request, res: Response) => {
+  try {
+    const nodeId = req.params.id;
+    const node = clawnet.getNode(nodeId);
+    if (!node) {
+      res.status(404).json({ success: false, error: 'Node not found' });
+      return;
+    }
+    
+    // 深度合并配置
+    const currentConfig = node.config || {};
+    const newConfig = deepMerge(currentConfig, req.body);
+    
+    const updatedNode = clawnet.updateNode(nodeId, { config: newConfig });
+    storage.saveNode(updatedNode);
+    res.json({ success: true, data: updatedNode.config });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ========== 微信消息历史 API ==========
+
+// 获取消息历史（内存）
+app.get('/wechat/messages', (req: Request, res: Response) => {
+  if (!wechatAdapter) {
+    res.status(503).json({ success: false, error: '微信适配器未配置' });
+    return;
+  }
+  
+  const limit = parseInt(req.query.limit as string) || 50;
+  const history = wechatAdapter.getMessageHistory(limit);
+  res.json({ success: true, data: history });
+});
+
+// 获取消息日志（文件）
+app.get('/wechat/messages/log', (req: Request, res: Response) => {
+  const fs = require('fs');
+  const messageLogFile = '/root/.openclaw/workspace/clawnet-mvp/wechat-messages.json';
+  
+  try {
+    const data = fs.readFileSync(messageLogFile, 'utf-8');
+    const messageLog = JSON.parse(data);
+    res.json({ 
+      success: true, 
+      total: messageLog.messages.length,
+      lastUpdated: messageLog.lastUpdated,
+      data: messageLog.messages 
+    });
+  } catch (error: any) {
+    res.status(404).json({ 
+      success: false, 
+      error: '消息日志不存在或为空',
+      hint: '请先给公众号发送消息'
+    });
+  }
+});
+
+// ========== 路由 API ==========
+
+app.post('/route', async (req: Request, res: Response) => {
+  try {
+    const { from, type, payload } = req.body;
+    const result = await clawnet.route({ from, type, payload });
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ========== WebSocket API ==========
+
+app.get('/ws/online', (req: Request, res: Response) => {
+  const nodes = wsService.getOnlineNodes();
+  res.json({ success: true, data: nodes });
+});
+
+// ========== 工具 API ==========
+
+app.post('/tokens', (req: Request, res: Response) => {
+  const token = generateToken();
+  res.json({ 
+    success: true, 
+    data: { 
+      token,
+      usage: 'Authorization: Bearer <token> or ?token=<token>'
+    } 
+  });
+});
+
+// ========== 健康检查（无需认证） ==========
+
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ 
+    success: true, 
+    status: 'healthy',
+    features: {
+      rest: true,
+      websocket: true,
+      auth: true,
+      wechat: wechatAdapter !== null
+    },
+    stats: {
+      nodes: clawnet.getAllNodes().length,
+      relations: clawnet.getAllRelations().length,
+      wsConnections: wsService.getOnlineNodes().length
+    }
+  });
+});
+
+// ========== 启动服务器 ==========
+
+server.listen(PORT, HOST, () => {
+  console.log(`🚀 ClawNet API running on http://${HOST}:${PORT}`);
+  console.log(`🔌 WebSocket: ws://${HOST}:${PORT}?nodeId=<nodeId>&token=<token>`);
+  console.log(`📖 Health: http://${HOST}:${PORT}/health`);
+  console.log(`🔑 Token: POST /tokens to get a token`);
+  console.log(`⚡ Port: ${PORT} (configured via PORT env var)`);
+  
+  if (wechatAdapter) {
+    console.log(`💬 WeChat: http://${HOST}:${PORT}/wechat/mp/message`);
+  }
+  
+  // 提示如果端口是80
+  if (PORT === 80) {
+    console.log(`✅ 监听80端口，可以直接用于微信公众号`);
+  }
+  
+  // 提示如果端口不是80/443
+  if (PORT !== 80 && PORT !== 443) {
+    console.log(`⚠️  注意：微信公众号只支持80和443端口`);
+    console.log(`   当前端口：${PORT}`);
+    console.log(`   建议：使用Nginx反向代理或设置 PORT=80`);
+  }
+});
+
+export { app, wsService };

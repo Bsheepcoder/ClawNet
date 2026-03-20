@@ -1,0 +1,13 @@
+{
+  "name": "clawnet",
+  "version": "1.0.0",
+  "description": "ClawNet 多节点关系网络集成",
+  "main": "scripts/index.js",
+  "scripts": {
+    "test": "node scripts/test-connection.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.0",
+    "ws": "^8.0.0"
+  }
+}

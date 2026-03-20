@@ -1,0 +1,64 @@
+  // ========== 节点配置 API ==========
+
+  // 获取节点配置
+  app.get('/nodes/:id/config', (req: Request, res: Response) => {
+    const node = clawnet.getNode(req.params.id);
+    if (!node) {
+      res.status(404).json({ success: false, error: 'Node not found' });
+      return;
+    }
+    res.json({ success: true, data: node.config || {} });
+  });
+
+  // 更新节点配置（完整替换）
+  app.put('/nodes/:id/config', (req: Request, res: Response) => {
+    try {
+      const nodeId = req.params.id;
+      const node = clawnet.getNode(nodeId);
+      if (!node) {
+        res.status(404).json({ success: false, error: 'Node not found' });
+        return;
+      }
+      
+      const updatedNode = clawnet.updateNode(nodeId, { config: req.body });
+      storage.saveNode(updatedNode);
+      res.json({ success: true, data: updatedNode.config });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  });
+
+  // 部分更新节点配置（合并）
+  app.patch('/nodes/:id/config', (req: Request, res: Response) => {
+    try {
+      const nodeId = req.params.id;
+      const node = clawnet.getNode(nodeId);
+      if (!node) {
+        res.status(404).json({ success: false, error: 'Node not found' });
+        return;
+      }
+      
+      // 深度合并配置
+      const currentConfig = node.config || {};
+      const newConfig = deepMerge(currentConfig, req.body);
+      
+      const updatedNode = clawnet.updateNode(nodeId, { config: newConfig });
+      storage.saveNode(updatedNode);
+      res.json({ success: true, data: updatedNode.config });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  });
+
+// 深度合并工具函数
+function deepMerge(target: any, source: any): any {
+  const output = { ...target };
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      output[key] = deepMerge(target[key] || {}, source[key]);
+    } else {
+      output[key] = source[key];
+    }
+  }
+  return output;
+}

@@ -1,0 +1,6 @@
+#!/usr/bin/env node
+/**
+ * ClawNet CLI 入口
+ */
+
+require('../cli/clawnet.js');

@@ -1,0 +1,9 @@
+# ClawNet 微信验证 Token
+
+# 生成时间：2026-03-16 01:52 CST
+# 用途：微信公众号服务器验证
+
+WECHAT_VERIFY_TOKEN=clawnet-mp-verify-$(date +%Y%m%d%H%M%S)
+
+# 实际Token（请复制到微信后台）：
+# clawnet-mp-secure-20260316015200

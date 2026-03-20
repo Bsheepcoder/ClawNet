@@ -1,0 +1,126 @@
+/**
+ * ClawNet 核心类型定义
+ * 一切皆节点，节点皆可联
+ */
+
+// 节点类型
+export type NodeType = 'human' | 'bot' | 'device' | 'org' | 'system';
+
+// 关系类型
+export type RelationType = 'observe' | 'manage' | 'collaborate' | 'delegate';
+
+// 权限级别
+export type Permission = 'read' | 'write' | 'admin';
+
+export interface WeChatReplyConfig {
+  defaultType?: 'text' | 'image' | 'news' | 'ai' | 'none';
+  text?: {
+    content: string;
+    keywords?: Record<string, string>;
+  };
+  news?: {
+    articles: Array<{
+      title: string;
+      description: string;
+      picUrl: string;
+      url: string;
+    }>;
+  };
+}
+
+// 微信节点配置
+export interface WeChatNodeConfig {
+  reply?: WeChatReplyConfig;
+  message?: {
+    // 消息去重
+    deduplication?: boolean;
+    // 去重缓存时间（秒）
+    deduplicationTTL?: number;
+    // 保存历史
+    saveHistory?: boolean;
+    // 历史记录数量限制
+    historyLimit?: number;
+    // 自动创建用户节点
+    autoCreateUser?: boolean;
+  };
+  // 超时设置（毫秒）
+  timeout?: number;
+}
+
+// 节点配置
+export interface NodeConfig {
+  wechat?: WeChatNodeConfig;
+  [key: string]: any;  // 支持其他平台的配置
+}
+
+// 节点
+export interface Node {
+  id: string;
+  type: NodeType;
+  name: string;
+  metadata?: Record<string, any>;
+  config?: NodeConfig;  // 新增：节点配置
+  createdAt: number;
+}
+
+// 关系
+export interface Relation {
+  id: string;
+  from: string;  // 节点ID
+  to: string;    // 节点ID
+  type: RelationType;
+  permissions: Permission[];
+  metadata?: Record<string, any>;
+  createdAt: number;
+  // 临时关系支持 (TTL)
+  expiresAt?: number;   // 过期时间（时间戳）
+  isTemporary?: boolean; // 是否为临时关系
+  revokedAt?: number;   // 撤销时间
+  revokeReason?: string; // 撤销原因
+}
+
+// 事件
+export interface Event {
+  id: string;
+  from: string;  // 来源节点
+  type: string;  // 事件类型
+  payload: any;
+  timestamp: number;
+}
+
+// 路由结果
+export interface RouteResult {
+  eventId: string;
+  targets: string[];  // 目标节点列表
+  delivered: string[]; // 成功投递的节点
+  failed: string[];    // 失败的节点
+}
+
+// ClawNet 核心 API
+export interface ClawNetAPI {
+  // 节点管理
+  addNode(node: Omit<Node, 'createdAt'>): Node;
+  getNode(id: string): Node | undefined;
+  removeNode(id: string): void;
+  updateNode(id: string, updates: Partial<Node>): Node;
+
+  // 关系管理
+  addRelation(
+    from: string,
+    to: string,
+    type: RelationType,
+    permissions: Permission[]
+  ): Relation;
+  getRelations(nodeId: string): Relation[];
+  removeRelation(id: string): void;
+
+  // 路由
+  route(event: Omit<Event, 'id' | 'timestamp'>): Promise<RouteResult>;
+
+  // 权限检查
+  checkPermission(
+    node: string,
+    target: string,
+    action: 'read' | 'write' | 'admin'
+  ): boolean;
+}

@@ -1,0 +1,139 @@
+╔══════════════════════════════════════════════════════════════╗
+║           微信公众号消息处理完整流程图                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+┌──────────────┐
+│  微信用户     │ 发送"你好"
+└──────┬───────┘
+       │
+       ↓
+┌──────────────────┐
+│ 微信公众号平台    │ POST XML
+└──────┬───────────┘
+       │
+       ↓ POST /clawnet/node/wechat-mp-xxx/message
+╔══════════════════════════════════════════════════╗
+║          ClawNet服务器 (PORT 80)                 ║
+╠══════════════════════════════════════════════════╣
+║                                                  ║
+║  ┌────────────────────────────────────────────┐ ║
+║  │ server.ts                                  │ ║
+║  │ • 接收HTTP请求                              │ ║
+║  │ • 提取XML数据                               │ ║
+║  │ • 调用wechatAdapter.handleMessage()        │ ║
+║  └──────────────┬─────────────────────────────┘ ║
+║                 ↓                                ║
+║  ┌────────────────────────────────────────────┐ ║
+║  │ wechat-adapter.ts                          │ ║
+║  │                                            │ ║
+║  │ 步骤1: parseXML()                          │ ║
+║  │  • 反转义JSON.stringify                    │ ║
+║  │  • 提取ToUserName, FromUserName, Content  │ ║
+║  │  • 提取MsgId, CreateTime                  │ ║
+║  │                                            │ ║
+║  │ 步骤2: 消息去重                            │ ║
+║  │  • 检查MsgId是否已处理                     │ ║
+║  │  • 标记为已处理                            │ ║
+║  │                                            │ ║
+║  │ 步骤3: 创建用户节点                        │ ║
+║  │  • wechat-{openid}                        │ ║
+║  │  • type: human                            │ ║
+║  │                                            │ ║
+║  │ 步骤4: 获取公众号配置                      │ ║
+║  │  • 节点: wechat-mp-{appid}                │ ║
+║  │  • 读取config.wechat.reply                │ ║
+║  │                                            │ ║
+║  │ 步骤5: 生成回复                            │ ║
+║  │  • 关键词匹配                              │ ║
+║  │  • 默认回复                                │ ║
+║  │  • Bot回复（可选）                         │ ║
+║  │                                            │ ║
+║  │ 步骤6: formatReply()                      │ ║
+║  │  • ToUserName: 用户OpenID                 │ ║
+║  │  • FromUserName: 公众号原始ID (gh_xxx)   │ ║
+║  │  • ⚠️ 不能用AppID！                       │ ║
+║  │  • 生成完整XML                             │ ║
+║  └──────────────┬─────────────────────────────┘ ║
+║                 ↓                                ║
+║  ┌────────────────────────────────────────────┐ ║
+║  │ 返回HTTP响应                               │ ║
+║  │ • Status: 200                              │ ║
+║  │ • Content-Type: application/xml            │ ║
+║  │ • Body: <xml>...</xml>                     │ ║
+║  └────────────────────────────────────────────┘ ║
+╚══════════════════════════════════════════════════╝
+       │
+       ↓ XML响应
+┌──────────────────┐
+│ 微信公众号平台    │
+└──────┬───────────┘
+       │
+       ↓ 显示回复
+┌──────────────┐
+│  微信用户     │ 收到"【Bot】你好！我是ClawNet Bot！"
+└──────────────┘
+
+═══════════════════════════════════════════════════════════════
+
+【节点关系图】
+
+   wechat-mp-wxd213e22f3178383b (公众号节点)
+              ↓ delegate
+         server-bot-001 (Bot节点)
+              ↓
+   wechat-o4smp3F8I46aF-y1jsHuCcyKXB7s (用户节点)
+
+═══════════════════════════════════════════════════════════════
+
+【关键数据结构】
+
+输入XML:
+<xml>
+  <ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>
+  <FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>
+  <CreateTime>1773602464</CreateTime>
+  <MsgType><![CDATA[text]]></MsgType>
+  <Content><![CDATA[你好]]></Content>
+  <MsgId>25391885127365207</MsgId>
+</xml>
+
+输出XML:
+<xml>
+  <ToUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></ToUserName>
+  <FromUserName><![CDATA[gh_dc46038d7a40]]></FromUserName>
+  <CreateTime>1773602600</CreateTime>
+  <MsgType><![CDATA[text]]></MsgType>
+  <Content><![CDATA[【Bot】你好！我是ClawNet Bot！]]></Content>
+</xml>
+
+⚠️ 注意：ToUserName和FromUserName互换！
+
+═══════════════════════════════════════════════════════════════
+
+【配置】
+
+{
+  "wechat": {
+    "reply": {
+      "text": {
+        "content": "【Bot】收到您的消息...",
+        "keywords": {
+          "你好": "【Bot】你好！我是ClawNet Bot！",
+          "帮助": "【Bot】我可以回复你的消息"
+        }
+      }
+    }
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+
+【关键要点】
+
+1. ⚠️ FromUserName必须是公众号原始ID（gh_开头），不能用AppID
+2. ⏱️ 必须在5秒内返回响应
+3. 📄 Content-Type必须是application/xml
+4. 🔄 ToUserName和FromUserName互换
+5. 🎯 使用MsgId进行消息去重
+
+═══════════════════════════════════════════════════════════════

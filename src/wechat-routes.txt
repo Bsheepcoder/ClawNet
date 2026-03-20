@@ -1,0 +1,54 @@
+// ========== 微信接口（必须在认证中间件之前！） ==========
+
+let wechatAdapter: WeChatAdapter | null = null;
+
+// 初始化微信适配器
+const wechatConfig = getWeChatConfig();
+
+if (wechatConfig.appId && wechatConfig.appSecret) {
+  wechatAdapter = new WeChatAdapter(wechatConfig, clawnet);
+  wechatAdapter.initialize().catch(err => {
+    console.error('❌ 微信适配器初始化失败:', err);
+  });
+}
+
+// 微信公众号节点ID
+const WECHAT_NODE_ID = `wechat-mp-${wechatConfig.appId || 'default'}`;
+
+// 微信接口：验证（GET）和消息接收（POST）共用同一个URL
+app.get(`/clawnet/node/${WECHAT_NODE_ID}/message`, (req: Request, res: Response) => {
+  if (!wechatAdapter) {
+    console.warn('⚠️  微信适配器未配置');
+    return res.status(200).send('error');
+  }
+  
+  const { signature, timestamp, nonce, echostr } = req.query;
+  
+  if (wechatAdapter.verifySignature(
+    { signature, timestamp, nonce, echostr },
+    signature as string
+  )) {
+    console.log('✅ 微信验证成功');
+    res.status(200).send(echostr);
+  } else {
+    console.log('❌ 微信验证失败');
+    res.status(200).send('error');
+  }
+});
+
+app.post(`/clawnet/node/${WECHAT_NODE_ID}/message`, async (req: Request, res: Response) => {
+  if (!wechatAdapter) {
+    return res.status(200).send('error');
+  }
+  
+  try {
+    const xmlData = req.body;
+    console.log('📩 收到微信消息');
+    const reply = await wechatAdapter.handleMessage(xmlData);
+    res.set('Content-Type', 'application/xml');
+    res.status(200).send(reply);
+  } catch (error: any) {
+    console.error('❌ 处理微信消息失败:', error);
+    res.status(200).send('error');
+  }
+});

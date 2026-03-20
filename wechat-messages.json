@@ -1,0 +1,143 @@
+{
+  "messages": [
+    {
+      "timestamp": "2026-03-15T19:21:05.178Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773602464</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391885127365207</MsgId>\n</xml>",
+      "processed": true,
+      "response": "你好！很高兴见到你！"
+    },
+    {
+      "timestamp": "2026-03-15T19:23:13.108Z",
+      "rawXML": "<xml>\n    <ToUserName><![CDATA[gh_test]]></ToUserName>\n    <FromUserName><![CDATA[openid_test]]></FromUserName>\n    <CreateTime>1773603300</CreateTime>\n    <MsgType><![CDATA[text]]></MsgType>\n    <Content><![CDATA[你好]]></Content>\n    <MsgId>55555555555</MsgId>\n  </xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T19:23:28.056Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773602607</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391884358325699</MsgId>\n</xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T19:23:38.141Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773602617</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391885208930145</MsgId>\n</xml>",
+      "processed": true,
+      "response": "你好！很高兴见到你！"
+    },
+    {
+      "timestamp": "2026-03-15T19:25:57.191Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773602756</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[q]]></Content>\n<MsgId>25391887435684858</MsgId>\n</xml>",
+      "processed": true,
+      "response": "感谢您的关注！我们已收到您的消息。"
+    },
+    {
+      "timestamp": "2026-03-15T19:27:51.048Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773602870</CreateTime>\n<MsgType><![CDATA[voice]]></MsgType>\n<MediaId><![CDATA[l54rQuNHfQMe9f3ZOICtPCRcdr0hZS7Lswle0WRhkl95mca9AsDGACX6R1nqWhiv]]></MediaId>\n<Format><![CDATA[amr]]></Format>\n<MsgId>7617566322741739520</MsgId>\n<Recognition><![CDATA[]]></Recognition>\n<MediaId16K><![CDATA[l54rQuNHfQMe9f3ZOICtPBOBhR7HCdRNNu_kiB6chGo41hL2B5238CaUg4ZsQ3tc]]></MediaId16K>\n</xml>",
+      "processed": false,
+      "response": "Error: 不支持的消息类型: voice"
+    },
+    {
+      "timestamp": "2026-03-15T19:32:02.346Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603121</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391891556907803</MsgId>\n</xml>",
+      "processed": true,
+      "response": "你好！很高兴见到你！"
+    },
+    {
+      "timestamp": "2026-03-15T19:32:14.724Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603133</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你知道什么]]></Content>\n<MsgId>25391891321357062</MsgId>\n</xml>",
+      "processed": true,
+      "response": "感谢您的关注！我们已收到您的消息。"
+    },
+    {
+      "timestamp": "2026-03-15T19:32:23.876Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603143</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[还有其他的吗]]></Content>\n<MsgId>25391891918310636</MsgId>\n</xml>",
+      "processed": true,
+      "response": "感谢您的关注！我们已收到您的消息。"
+    },
+    {
+      "timestamp": "2026-03-15T19:33:24.149Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603203</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[测试]]></Content>\n<MsgId>25391892790447838</MsgId>\n</xml>",
+      "processed": true,
+      "response": "测试成功！"
+    },
+    {
+      "timestamp": "2026-03-15T19:33:30.117Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603209</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[价格]]></Content>\n<MsgId>25391890705423249</MsgId>\n</xml>",
+      "processed": true,
+      "response": "我们的课程价格：基础班XXX元"
+    },
+    {
+      "timestamp": "2026-03-15T19:35:13.173Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603312</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391894620842987</MsgId>\n</xml>",
+      "processed": true,
+      "response": "你好！很高兴见到你！"
+    },
+    {
+      "timestamp": "2026-03-15T19:40:02.678Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603601</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391898845468473</MsgId>\n</xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T19:40:14.634Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603613</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391901039705299</MsgId>\n</xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T19:40:38.569Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603637</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[美国]]></Content>\n<MsgId>25391900142157009</MsgId>\n</xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T19:40:48.982Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603648</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[测试]]></Content>\n<MsgId>25391898780422966</MsgId>\n</xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T19:42:00.564Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773603719</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25391900941157784</MsgId>\n</xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T22:02:51.951Z",
+      "rawXML": "<xml>\n    <ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n    <FromUserName><![CDATA[test_keyword_user]]></FromUserName>\n    <CreateTime>1773604500</CreateTime>\n    <MsgType><![CDATA[text]]></MsgType>\n    <Content><![CDATA[你好]]></Content>\n    <MsgId>77777777777</MsgId>\n  </xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T22:04:35.769Z",
+      "rawXML": "<xml>\n    <ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n    <FromUserName><![CDATA[test_fix_user]]></FromUserName>\n    <CreateTime>1773606000</CreateTime>\n    <MsgType><![CDATA[text]]></MsgType>\n    <Content><![CDATA[你好]]></Content>\n    <MsgId>44444444444</MsgId>\n  </xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T22:04:53.620Z",
+      "rawXML": "<xml>\n    <ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n    <FromUserName><![CDATA[new_test_user]]></FromUserName>\n    <CreateTime>1773606500</CreateTime>\n    <MsgType><![CDATA[text]]></MsgType>\n    <Content><![CDATA[你好]]></Content>\n    <MsgId>33333333333</MsgId>\n  </xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T22:05:20.097Z",
+      "rawXML": "<xml>\n    <ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n    <FromUserName><![CDATA[verify_config_user]]></FromUserName>\n    <CreateTime>1773607000</CreateTime>\n    <MsgType><![CDATA[text]]></MsgType>\n    <Content><![CDATA[你好]]></Content>\n    <MsgId>22222222222</MsgId>\n  </xml>",
+      "processed": true,
+      "response": "收到消息"
+    },
+    {
+      "timestamp": "2026-03-15T22:07:07.088Z",
+      "rawXML": "<xml>\n    <ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n    <FromUserName><![CDATA[test_success_user]]></FromUserName>\n    <CreateTime>1773609500</CreateTime>\n    <MsgType><![CDATA[text]]></MsgType>\n    <Content><![CDATA[你好]]></Content>\n    <MsgId>88888888888</MsgId>\n  </xml>",
+      "processed": true,
+      "response": "【Bot】你好！"
+    },
+    {
+      "timestamp": "2026-03-15T23:57:09.556Z",
+      "rawXML": "<xml><ToUserName><![CDATA[gh_dc46038d7a40]]></ToUserName>\n<FromUserName><![CDATA[o4smp3F8I46aF-y1jsHuCcyKXB7s]]></FromUserName>\n<CreateTime>1773619028</CreateTime>\n<MsgType><![CDATA[text]]></MsgType>\n<Content><![CDATA[你好]]></Content>\n<MsgId>25392118841988805</MsgId>\n</xml>",
+      "processed": false,
+      "response": null
+    }
+  ],
+  "lastUpdated": "2026-03-15T23:57:09.556Z"
+}
