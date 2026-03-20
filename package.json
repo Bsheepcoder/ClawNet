@@ -63,6 +63,9 @@
     "express": "^4.18.0",
     "ws": "^8.0.0"
   },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.0.0"
+  },
   "engines": {
     "node": ">=20.0.0"
   },

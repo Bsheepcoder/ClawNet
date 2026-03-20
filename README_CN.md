@@ -42,9 +42,17 @@ ClawNet 是一个基于关系网络的多节点智能协作系统，支持：
 
 ## 📦 安装
 
+> **🪟 Windows 用户：** 详见 [Windows 安装指南](INSTALL_WINDOWS.md)
+
 ```bash
 # 使用 npm 安装（推荐）
 npm install @husile/clawnet
+
+# 如果在 Windows 上遇到 better-sqlite3 编译问题，使用：
+npm install @husile/clawnet --ignore-scripts
+
+# 或使用内存模式（无需数据库）：
+const clawnet = new ClawNet({ storage: 'memory' });
 
 # 使用 yarn 安装
 yarn add @husile/clawnet

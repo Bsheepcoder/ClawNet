@@ -42,9 +42,17 @@ ClawNet is a multi-node intelligent collaboration system based on relation netwo
 
 ## 📦 Installation
 
+> **🪟 Windows Users:** See [Windows Installation Guide](INSTALL_WINDOWS.md) for detailed instructions.
+
 ```bash
 # Using npm (recommended)
 npm install @husile/clawnet
+
+# If you encounter issues on Windows with better-sqlite3, use:
+npm install @husile/clawnet --ignore-scripts
+
+# Or use the memory mode (no database required):
+const clawnet = new ClawNet({ storage: 'memory' });
 
 # Using yarn
 yarn add @husile/clawnet
