@@ -1,0 +1,77 @@
+{
+  "name": "@husile/clawnet-lite",
+  "version": "0.5.0",
+  "description": "Relation-Driven Multi-Node Intelligent Collaboration Network (Lite version - no native dependencies)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "clawnet": "./bin/clawnet"
+  },
+  "files": [
+    "dist/**/*",
+    "bin/clawnet",
+    "skill/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    ".env.example",
+    ".env.production.example"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node dist/test.js",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "cli": "node cli/clawnet.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "relation-network",
+    "ai-bot",
+    "routing",
+    "permission",
+    "multi-node",
+    "collaboration",
+    "wechat",
+    "telegram",
+    "websocket",
+    "graph",
+    "topology",
+    "lite",
+    "no-native"
+  ],
+  "author": "husile",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bsheepcoder/ClawNet.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Bsheepcoder/ClawNet/issues"
+  },
+  "homepage": "https://github.com/Bsheepcoder/ClawNet#readme",
+  "devDependencies": {
+    "@types/cors": "^2.8.0",
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.0",
+    "express": "^4.18.0",
+    "ws": "^8.0.0"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
