@@ -1,281 +1,363 @@
 # Windows 安装指南
 
-## 🪟 快速安装（3种方法）
+## 🪟 完整安装教程
 
 ---
 
-## ⚡ 方法1：安装 Visual Studio Build Tools（推荐）
+## ⚡ 方法1：使用轻量版（强烈推荐）
 
-### 步骤
+**适合：** 不想安装编译工具的 Windows 用户
 
-1. **下载 Build Tools**
+### 安装命令
+
+```bash
+npm install -g @husile/clawnet-lite
+```
+
+### 验证安装
+
+```bash
+# 检查版本
+clawnet --version
+
+# 查看帮助
+clawnet --help
+
+# 使用交互式 CLI
+clawnet-interactive
+```
+
+### 特点
+- ✅ **无需编译工具**
+- ✅ **安装快速**（30秒）
+- ✅ **命令行可用**
+- ✅ **功能完整**（除 SQLite 外）
+
+### 数据存储
+默认使用**内存模式**，重启后数据会丢失。
+
+---
+
+## 🔧 方法2：完整版（需要编译工具）
+
+**适合：** 需要数据持久化的用户
+
+### 步骤 1：安装编译工具
+
+#### 选项 A：Visual Studio Build Tools（推荐）
+
+1. **下载**
    - 访问：https://visualstudio.microsoft.com/visual-cpp-build-tools/
-   - 点击 "下载 Build Tools"
+   - 点击"下载 Build Tools"
 
-2. **安装（约 5GB）**
+2. **安装**
    ```
-   必须选择：
    ✅ Desktop development with C++
    ✅ MSVC v143 - VS 2022 C++ x64/x86 build tools
-   ✅ Windows 10/11 SDK
+   ✅ Windows 10 SDK 或 Windows 11 SDK
    ```
 
 3. **重启电脑**
 
-4. **重新安装**
-   ```bash
-   npm install @husile/clawnet
-   ```
-
----
-
-## 🚀 方法2：使用预编译包（最快）
-
-### 安装预编译版本
-
-```bash
-# 下载预编译包
-npm install @husile/clawnet --ignore-scripts
-
-# 手动安装预编译的 better-sqlite3
-npm install better-sqlite3 --build-from-source=false
-```
-
----
-
-## 💡 方法3：使用轻量版（无编译）
-
-### 安装无数据库版本
-
-```bash
-# 使用内存存储模式（无需安装数据库）
-npm install @husile/clawnet
-
-# 在代码中设置
-const clawnet = new ClawNet({
-  storage: 'memory'  // 使用内存存储，无需 better-sqlite3
-});
-```
-
----
-
-## 🔧 常见问题解决
-
-### 问题1：Python 找不到
-
-**错误：**
-```
-gyp ERR! find Python
-```
-
-**解决方案：**
-```bash
-# 安装 Python（如果没有）
-# 访问：https://www.python.org/downloads/
-
-# 或使用 chocolatey
-choco install python
-
-# 配置 npm 使用 Python
-npm config set python "C:\Python312\python.exe"
-```
-
----
-
-### 问题2：缺少 Visual Studio
-
-**错误：**
-```
-gyp ERR! find VS not looking for VS2017
-```
-
-**解决方案：**
-```bash
-# 选项A：安装完整的 Visual Studio
-# https://visualstudio.microsoft.com/
-
-# 选项B：只安装 Build Tools（更轻量）
-# https://visualstudio.microsoft.com/visual-cpp-build-tools/
-
-# 选项C：使用 chocolatey
-choco install visualstudio2022-workload-vctools
-```
-
----
-
-### 问题3：权限问题
-
-**错误：**
-```
-Error: EACCES: permission denied
-```
-
-**解决方案：**
-```bash
-# 使用管理员模式运行 PowerShell
-# 右键 PowerShell → 以管理员身份运行
-
-# 或修改 npm 全局路径
-mkdir %USERPROFILE%\AppData\Roaming\npm
-npm config set prefix %USERPROFILE%\AppData\Roaming\npm
-```
-
----
-
-## 📝 完整安装步骤（Windows）
-
-### 步骤1：准备环境
+#### 选项 B：使用 Chocolatey（命令行安装）
 
 ```powershell
-# 1. 检查 Node.js 版本
-node -v
-# 需要 >= 20.0.0
+# 以管理员身份运行 PowerShell
 
-# 2. 检查 npm 版本
-npm -v
+# 安装 Chocolatey
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-# 3. 更新 npm（可选）
-npm install -g npm@latest
-```
-
-### 步骤2：安装编译工具
-
-**选项A：完整版（推荐）**
-```powershell
-# 下载并运行 Visual Studio Build Tools 安装程序
-# https://visualstudio.microsoft.com/visual-cpp-build-tools/
-```
-
-**选项B：命令行安装（快速）**
-```powershell
-# 使用 chocolatey
+# 安装编译工具
 choco install visualstudio2022-workload-vctools -y
 
-# 或使用 npm 全局安装（已弃用，不推荐）
-# npm install -g windows-build-tools
+# 重启电脑
 ```
 
-### 步骤3：安装 ClawNet
+### 步骤 2：安装 ClawNet
 
-```powershell
-# 创建项目目录
-mkdir clawnet-demo
-cd clawnet-demo
+```bash
+# 全局安装
+npm install -g @husile/clawnet
 
-# 初始化
+# 验证
+clawnet --version
+```
+
+---
+
+## 🚀 方法3：跳过编译（临时方案）
+
+**注意：** 此方法会导致 SQLite 功能不可用
+
+```bash
+# 安装但跳过编译
+npm install -g @husile/clawnet --ignore-scripts
+```
+
+**使用限制：**
+- ❌ SQLite 功能不可用
+- ✅ 内存模式可用
+- ✅ WebSocket 可用
+- ✅ 微信集成可用
+
+---
+
+## 📋 完整安装流程（推荐）
+
+### 新手推荐
+
+```bash
+# 1. 安装轻量版
+npm install -g @husile/clawnet-lite
+
+# 2. 测试
+clawnet --version
+clawnet health
+
+# 3. 使用
+clawnet-interactive
+```
+
+### 进阶用户
+
+```bash
+# 1. 安装编译工具（参考方法2）
+
+# 2. 安装完整版
+npm install -g @husile/clawnet
+
+# 3. 测试
+clawnet --version
+clawnet health
+```
+
+---
+
+## 🎯 验证安装
+
+### 检查命令
+
+```bash
+# 查看版本
+clawnet --version
+
+# 查看帮助
+clawnet --help
+
+# 健康检查
+clawnet health
+
+# 交互式 CLI
+clawnet-interactive
+```
+
+### 测试功能
+
+```bash
+# 创建测试目录
+mkdir clawnet-test
+cd clawnet-test
+
+# 初始化项目
 npm init -y
 
 # 安装 ClawNet
-npm install @husile/clawnet
+npm install @husile/clawnet-lite
 
-# 验证安装
-node -e "console.log(require('@husile/clawnet'))"
-```
+# 创建测试文件
+cat > test.js << 'EOF'
+const { ClawNet } = require('@husile/clawnet-lite');
 
----
+const clawnet = new ClawNet();
 
-## 🎯 零编译安装（推荐给不想安装编译工具的用户）
-
-### 使用内存模式
-
-```javascript
-// 创建 test.js
-const { ClawNet } = require('@husile/clawnet');
-
-// 使用内存存储（无需安装 better-sqlite3）
-const clawnet = new ClawNet({
-  storage: 'memory'
+// 创建节点
+clawnet.addNode({
+  id: 'test-bot',
+  type: 'bot',
+  name: '测试机器人'
 });
 
-console.log('✅ ClawNet 运行成功（内存模式）');
+// 查看节点
+console.log('节点列表:', clawnet.getNodes());
+
+// 启动服务
 clawnet.start(3000);
-```
+console.log('✅ ClawNet 运行在 http://localhost:3000');
+EOF
 
-### 运行
-
-```bash
-# 安装（跳过原生依赖）
-npm install @husile/clawnet --ignore-scripts
-
-# 运行
+# 运行测试
 node test.js
-```
-
----
-
-## 🔍 验证安装
-
-### 测试脚本
-
-```javascript
-// test-install.js
-const pkg = require('@husile/clawnet');
-
-console.log('✅ ClawNet 安装成功！');
-console.log('导出内容:', Object.keys(pkg));
-
-// 测试基本功能
-const { ClawNet } = pkg;
-const clawnet = new ClawNet({ storage: 'memory' });
-
-console.log('✅ 基本功能正常！');
-```
-
-### 运行测试
-
-```bash
-node test-install.js
 ```
 
 **预期输出：**
 ```
-✅ ClawNet 安装成功！
-导出内容: [
-  'ClawNet',
-  'RelationGraph',
-  'PermissionSystem',
-  'Router',
-  'RelationRequestManager'
-]
-✅ 基本功能正常！
+节点列表: [ { id: 'test-bot', type: 'bot', name: '测试机器人', ... } ]
+✅ ClawNet 运行在 http://localhost:3000
 ```
 
 ---
 
-## 🌐 下载源
+## 🛠️ 常见问题
 
-如果 npm 官方源速度慢，可以使用国内镜像：
+### 问题1：'clawnet' 不是内部或外部命令
+
+**原因：** npm 全局路径未添加到 PATH
+
+**解决方案：**
+
+```powershell
+# 检查 npm 全局路径
+npm config get prefix
+
+# 添加到 PATH（PowerShell 管理员）
+$env:Path += ";C:\Users\你的用户名\AppData\Roaming\npm"
+
+# 或手动添加：
+# 1. 右键"此电脑" → 属性 → 高级系统设置
+# 2. 环境变量 → 用户变量 → Path → 编辑
+# 3. 添加：C:\Users\你的用户名\AppData\Roaming\npm
+```
+
+---
+
+### 问题2：npm install 失败
+
+**错误：** `gyp ERR! find VS`
+
+**解决方案：**
+```bash
+# 使用轻量版
+npm install -g @husile/clawnet-lite
+```
+
+---
+
+### 问题3：权限错误
+
+**错误：** `Error: EACCES: permission denied`
+
+**解决方案：**
 
 ```bash
-# 使用淘宝镜像
-npm config set registry https://registry.npmmirror.com
+# 方案1：使用管理员权限
+# 右键 PowerShell → 以管理员身份运行
 
-# 或使用 cnpm
-npm install -g cnpm --registry=https://registry.npmmirror.com
-cnpm install @husile/clawnet
+# 方案2：修改 npm 全局路径
+npm config set prefix "%USERPROFILE%\AppData\Roaming\npm"
 ```
+
+---
+
+### 问题4：better-sqlite3 编译失败
+
+**错误：** `prebuild-install warn install No prebuilt binaries found`
+
+**解决方案：**
+```bash
+# 使用轻量版（推荐）
+npm install -g @husile/clawnet-lite
+
+# 或安装编译工具后重试
+npm install -g @husile/clawnet
+```
+
+---
+
+## 📊 版本对比
+
+| 版本 | 命令 | SQLite | 内存模式 | 编译工具 | 推荐度 |
+|------|------|--------|---------|---------|--------|
+| **轻量版** | `@husile/clawnet-lite` | ❌ | ✅ | 不需要 | ⭐⭐⭐⭐⭐ |
+| 完整版 | `@husile/clawnet` | ✅ | ✅ | 需要 | ⭐⭐⭐ |
+
+---
+
+## 🎨 使用示例
+
+### 基础使用
+
+```javascript
+const { ClawNet } = require('@husile/clawnet-lite');
+
+// 创建实例
+const clawnet = new ClawNet();
+
+// 添加节点
+clawnet.addNode({
+  id: 'bot-001',
+  type: 'bot',
+  name: '客服机器人'
+});
+
+// 添加关系
+clawnet.addRelation('user-001', 'bot-001', 'observe', ['read']);
+
+// 检查权限
+const hasPermission = clawnet.checkPermission('user-001', 'bot-001', 'read');
+console.log(hasPermission); // true
+```
+
+### CLI 使用
+
+```bash
+# 交互式操作
+clawnet-interactive
+
+# 命令行操作
+clawnet create-node bot-001 --name "客服机器人" --type bot
+clawnet list-nodes
+clawnet add-relation user-001 bot-001 --type observe --perms "read"
+clawnet check-perm user-001 bot-001 read
+```
+
+---
+
+## 🔗 快速链接
+
+| 项目 | 链接 |
+|------|------|
+| **轻量版 npm** | https://www.npmjs.com/package/@husile/clawnet-lite |
+| **完整版 npm** | https://www.npmjs.com/package/@husile/clawnet |
+| **GitHub** | https://github.com/Bsheepcoder/ClawNet |
+| **文档** | https://github.com/Bsheepcoder/ClawNet#readme |
+| **CLI 指南** | https://github.com/Bsheepcoder/ClawNet/blob/main/CLI-GUIDE.md |
 
 ---
 
 ## 📞 需要帮助？
 
-如果遇到问题，请提供：
-1. Node.js 版本：`node -v`
-2. npm 版本：`npm -v`
-3. 完整错误日志
-4. 操作系统版本
+如果遇到问题：
+
+1. **查看文档：** https://github.com/Bsheepcoder/ClawNet
+2. **提交 Issue：** https://github.com/Bsheepcoder/ClawNet/issues
+3. **检查 Node.js 版本：** `node -v`（需要 >= 20.0.0）
+4. **检查 npm 版本：** `npm -v`
 
 ---
 
-## ✅ 安装成功标志
+## ✅ 推荐安装命令
 
-如果看到以下输出，说明安装成功：
+**Windows 用户推荐：**
 
+```bash
+npm install -g @husile/clawnet-lite
 ```
-✅ ClawNet 安装成功！
-导出内容: [ 'ClawNet', 'RelationGraph', 'PermissionSystem', 'Router', 'RelationRequestManager' ]
+
+**一键安装 + 测试：**
+
+```bash
+# 安装
+npm install -g @husile/clawnet-lite
+
+# 验证
+clawnet --version
+
+# 使用
+clawnet-interactive
 ```
 
 ---
 
-**选择最适合你的方法，开始使用 ClawNet！** 🚀
+**选择适合你的方式，开始使用 ClawNet！** 🚀

@@ -4,7 +4,7 @@
 
 **🤖 关系驱动的多节点智能协作网络**
 
-**中文版** | **[English](README.md)**
+**ClawNet** | **中文版** | **[English](README.md)** | **[Windows 安装](INSTALL_WINDOWS.md)** | **[CLI 指南](CLI-GUIDE.md)**
 
 [![npm version](https://badge.fury.io/js/@husile%2Fclawnet.svg)](https://www.npmjs.com/package/@husile/clawnet)
 [![npm downloads](https://img.shields.io/npm/dm/@husile/clawnet.svg)](https://www.npmjs.com/package/@husile/clawnet)
