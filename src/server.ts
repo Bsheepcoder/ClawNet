@@ -18,6 +18,7 @@ import { WeChatAdapter, WeChatConfig, getWeChatConfig } from './adapters/wechat-
 import { InstanceManager, OpenClawInstance } from './instance-service';
 import { listInstances, getInstance, createInstance, startInstance, stopInstance, connectInstance, deleteInstance } from './instance-service';
 import QRCode from 'qrcode';
+import { setupNodeDiscoveryAPI } from './api/node-discovery';
 
 const app = express();
 const server = createServer(app);
@@ -541,6 +542,9 @@ app.get('/ws/online', (req: Request, res: Response) => {
   const nodes = wsService.getOnlineNodes();
   res.json({ success: true, data: nodes });
 });
+
+// ========== 节点发现与通信 API ==========
+setupNodeDiscoveryAPI(app, clawnet, storage);
 
 // ========== 实例管理 API ==========
 
