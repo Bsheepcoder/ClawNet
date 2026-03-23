@@ -30,6 +30,10 @@
     "cli": "node cli/clawnet.js",
     "cli:interactive": "node bin/clawnet-interactive",
     "ctl": "node bin/clawnet-ctl",
+    "release": "./scripts/release.sh",
+    "release:patch": "./scripts/release.sh patch",
+    "release:minor": "./scripts/release.sh minor",
+    "release:major": "./scripts/release.sh major",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
