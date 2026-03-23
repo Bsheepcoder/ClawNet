@@ -135,33 +135,40 @@ export class InstanceManager {
       const wechatDir = path.join(instance.profileDir, 'openclaw-weixin');
       const accountsListFile = path.join(wechatDir, 'accounts.json');
       
-      // 如果没有 accountId，尝试从 accounts.json 自动发现
-      if (!instance.wechat?.accountId) {
-        if (fs.existsSync(accountsListFile)) {
-          const accountsList = JSON.parse(fs.readFileSync(accountsListFile, 'utf-8'));
-          
-          if (Array.isArray(accountsList) && accountsList.length > 0) {
-            // 使用第一个账号
-            instance.wechat = instance.wechat || { loggedIn: false };
-            instance.wechat.accountId = accountsList[0];
-            console.log(`[instance-manager] Auto-discovered WeChat account for ${instance.name}: ${accountsList[0]}`);
-          }
-        }
-      }
-      
-      // 检查账号文件是否存在
-      if (instance.wechat?.accountId) {
-        const accountFile = path.join(wechatDir, 'accounts', `${instance.wechat.accountId}.json`);
+      // 总是重新读取 accounts.json 获取最新账号列表
+      if (fs.existsSync(accountsListFile)) {
+        const accountsList = JSON.parse(fs.readFileSync(accountsListFile, 'utf-8'));
         
-        if (fs.existsSync(accountFile)) {
-          const accountData = JSON.parse(fs.readFileSync(accountFile, 'utf-8'));
-          instance.wechat.loggedIn = true;
-          instance.wechat.userId = accountData.userId;
-          instance.wechat.lastLoginAt = accountData.savedAt;
-          console.log(`[instance-manager] WeChat logged in for ${instance.name}: ${instance.wechat.accountId}`);
+        if (Array.isArray(accountsList) && accountsList.length > 0) {
+          // 使用最新的账号（最后一个）
+          const latestAccountId = accountsList[accountsList.length - 1];
+          
+          // 更新实例配置中的 accountId
+          instance.wechat = instance.wechat || { loggedIn: false };
+          instance.wechat.accountId = latestAccountId;
+          
+          console.log(`[instance-manager] Found latest WeChat account for ${instance.name}: ${latestAccountId}`);
+          
+          // 检查账号文件是否存在
+          const accountFile = path.join(wechatDir, 'accounts', `${latestAccountId}.json`);
+          
+          if (fs.existsSync(accountFile)) {
+            const accountData = JSON.parse(fs.readFileSync(accountFile, 'utf-8'));
+            instance.wechat.loggedIn = true;
+            instance.wechat.userId = accountData.userId;
+            instance.wechat.lastLoginAt = accountData.savedAt;
+            console.log(`[instance-manager] ✓ WeChat logged in for ${instance.name}: ${latestAccountId}`);
+          } else {
+            instance.wechat.loggedIn = false;
+            console.log(`[instance-manager] ✗ WeChat account file not found: ${accountFile}`);
+          }
         } else {
-          instance.wechat.loggedIn = false;
+          instance.wechat = { loggedIn: false };
+          console.log(`[instance-manager] No WeChat accounts found for ${instance.name}`);
         }
+      } else {
+        instance.wechat = { loggedIn: false };
+        console.log(`[instance-manager] No WeChat config for ${instance.name}`);
       }
     } catch (error) {
       console.warn(`[instance-manager] Failed to check WeChat login: ${String(error)}`);
