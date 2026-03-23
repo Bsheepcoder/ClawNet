@@ -228,8 +228,15 @@ export class InstanceManager {
       this.instances.set(name, instance);
       this.saveInstances();
 
+      // 自动安装微信插件（失败不阻止实例创建）
       if (autoInstallWeixin) {
-        await this.installWeixinPlugin(name);
+        try {
+          await this.installWeixinPlugin(name);
+        } catch (error: any) {
+          console.warn(`[instance-manager] WeChat plugin installation failed for ${name}: ${error.message}`);
+          console.warn(`[instance-manager] Instance created successfully, but plugin needs manual installation`);
+          // 不抛出错误，实例已创建成功
+        }
       }
 
       return {
@@ -249,8 +256,23 @@ export class InstanceManager {
    */
   private async installWeixinPlugin(name: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      console.log(`[instance-manager] Installing WeChat plugin for ${name}...`);
+      
       const child = spawn('openclaw', ['--profile', name, 'plugins', 'install', '@tencent-weixin/openclaw-weixin'], {
-        stdio: 'inherit'
+        stdio: ['ignore', 'pipe', 'pipe'] // 捕获输出
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout?.on('data', (data) => {
+        stdout += data.toString();
+        console.log(`[plugin-install][${name}] ${data.toString().trim()}`);
+      });
+
+      child.stderr?.on('data', (data) => {
+        stderr += data.toString();
+        console.error(`[plugin-install][${name}] ERROR: ${data.toString().trim()}`);
       });
 
       child.on('close', (code) => {
@@ -258,14 +280,22 @@ export class InstanceManager {
           console.log(`[instance-manager] WeChat plugin installed for ${name}`);
           resolve();
         } else {
-          reject(new Error(`Failed to install WeChat plugin: exit code ${code}`));
+          const errorMsg = `Failed to install WeChat plugin: exit code ${code}\nstdout: ${stdout}\nstderr: ${stderr}`;
+          console.error(`[instance-manager] ${errorMsg}`);
+          reject(new Error(errorMsg));
         }
       });
 
+      child.on('error', (error) => {
+        console.error(`[instance-manager] Failed to spawn plugin install: ${error.message}`);
+        reject(new Error(`Failed to run plugin install: ${error.message}`));
+      });
+
+      // 超时时间改为 60 秒
       setTimeout(() => {
         child.kill();
-        reject(new Error('Plugin installation timeout'));
-      }, 30000);
+        reject(new Error('Plugin installation timeout (60s)'));
+      }, 60000);
     });
   }
 
