@@ -1,6 +1,6 @@
 {
   "name": "@husile/clawnet-lite",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Relation-Driven Multi-Node Intelligent Collaboration Network (Lite - No Native Dependencies)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
