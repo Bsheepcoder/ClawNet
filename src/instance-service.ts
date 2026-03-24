@@ -16,6 +16,7 @@ export interface OpenClawInstance {
   port: number;
   profileDir: string;
   status: 'running' | 'stopped';
+  isMain?: boolean;
   wechat?: {
     accountId?: string;
     userId?: string;
@@ -79,6 +80,7 @@ export class InstanceManager {
             port: config.port || this.calculatePort(id),
             profileDir: config.profileDir || path.join(HOME_DIR, `.openclaw-${id}`),
             status: config.status || 'stopped',
+            isMain: config.isMain || false,
             wechat: config.wechat || { loggedIn: false },
             gateway: config.gateway || { running: false, port: this.calculatePort(id) },
             clawnet: config.clawnet || { connected: false },

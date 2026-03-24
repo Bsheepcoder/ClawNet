@@ -1,0 +1,15 @@
+# ClawNet Extensions 配置
+
+# 微信桥接扩展
+wechat-bridge:
+  enabled: true
+  type: http
+  endpoint: http://localhost:19099/wechat/message
+  healthCheck: http://localhost:19099/health
+  description: 微信消息桥接到 ClawNet
+
+# 未来扩展
+# telegram-bridge:
+#   enabled: false
+#   type: http
+#   endpoint: http://localhost:19100/telegram/message

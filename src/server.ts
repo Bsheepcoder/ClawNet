@@ -159,7 +159,8 @@ app.get('/nodes/:id', (req: Request, res: Response) => {
 });
 
 app.get('/nodes', (req: Request, res: Response) => {
-  const nodes = clawnet.getAllNodes();
+  // 从数据库读取节点，而不是从内存（这样可以获取最新的心跳状态）
+  const nodes = storage.getAllNodes();
   res.json({ success: true, data: nodes });
 });
 
@@ -526,14 +527,97 @@ app.get('/wechat/messages/log', (req: Request, res: Response) => {
 
 // ========== 路由 API ==========
 
+// 消息历史记录
+const messageHistory: any[] = [];
+
 app.post('/route', async (req: Request, res: Response) => {
   try {
     const { from, type, payload } = req.body;
+    
+    // 创建完整事件
+    const event = {
+      id: `${from}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      from,
+      type,
+      payload,
+      timestamp: Date.now()
+    };
+    
+    // 获取路由目标
     const result = await clawnet.route({ from, type, payload });
-    res.json({ success: true, data: result });
+    
+    // 通过 WebSocket 投递到目标节点
+    const delivered: string[] = [];
+    const failed: string[] = [];
+    
+    for (const targetId of result.targets) {
+      const sent = wsService.sendToNode(targetId, {
+        type: 'message',
+        from: event.from,
+        to: targetId,
+        timestamp: event.timestamp,
+        payload: {
+          eventType: event.type,
+          data: event.payload,
+          eventId: event.id,
+          targets: result.targets
+        }
+      } as any);
+      
+      if (sent) {
+        delivered.push(targetId);
+      } else {
+        failed.push(targetId);
+      }
+    }
+    
+    // 记录到消息历史
+    const messageRecord = {
+      ...event,
+      targets: result.targets,
+      delivered,
+      failed,
+      status: delivered.length > 0 ? 'delivered' : 'failed'
+    };
+    messageHistory.push(messageRecord);
+    
+    // 保持最近 1000 条消息
+    if (messageHistory.length > 1000) {
+      messageHistory.shift();
+    }
+    
+    res.json({ 
+      success: true, 
+      data: {
+        eventId: event.id,
+        targets: result.targets,
+        delivered,
+        failed
+      }
+    });
   } catch (error: any) {
     res.status(400).json({ success: false, error: error.message });
   }
+});
+
+// 获取消息历史
+app.get('/messages', (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 100;
+  const nodeFilter = req.query.node as string;
+  
+  let messages = messageHistory;
+  
+  if (nodeFilter) {
+    messages = messages.filter(m => 
+      m.from === nodeFilter || 
+      m.targets?.includes(nodeFilter)
+    );
+  }
+  
+  res.json({ 
+    success: true, 
+    data: messages.slice(-limit)
+  });
 });
 
 // ========== WebSocket API ==========
@@ -545,6 +629,29 @@ app.get('/ws/online', (req: Request, res: Response) => {
 
 // ========== 节点发现与通信 API ==========
 setupNodeDiscoveryAPI(app, clawnet, storage);
+
+import WechatListener from './wechat-listener';
+
+// ========== 微信消息监听器 ==========
+const wechatListener = new WechatListener({
+  gatewayUrl: `ws://localhost:${process.env.OPENCLAW_GATEWAY_PORT || 18789}`,
+  clawnetUrl: 'ws://localhost:3000',
+  clawnetToken: 'clawnet-secret-token'
+});
+
+// 自动启动微信监听器
+wechatListener.start();
+
+// 微信监听器状态 API
+app.get('/wechat-listener/status', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: wechatListener.getStatus()
+  });
+});
+
+console.log('🎧 微信消息监听器已启动');
+console.log('   将自动监听已连接微信的实例消息');
 
 // ========== 实例管理 API ==========
 
@@ -894,6 +1001,214 @@ app.get('/instances/:name/wechat/qrcode', async (req: Request, res: Response) =>
       success: false, 
       error: error.message
     });
+  }
+});
+
+// ========== OpenClaw 实例配置管理 API ==========
+
+// 获取实例的 OpenClaw 配置
+app.get('/instances/:name/openclaw-config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    if (!fs.existsSync(configPath)) {
+      return res.status(404).json({ success: false, error: '配置文件不存在' });
+    }
+    
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 提取关键配置
+    const openclawConfig = {
+      instance: instanceName,
+      model: config.agents?.defaults?.model || null,
+      workspace: config.agents?.defaults?.workspace || null,
+      clawnet: config.clawnet || null,
+      wechat: config.channels?.telegram || null,
+      gateway: config.gateway || null,
+      full: config  // 完整配置（用于高级用户）
+    };
+    
+    res.json({ success: true, data: openclawConfig });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 更新实例的 OpenClaw 配置
+app.put('/instances/:name/openclaw-config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    if (!fs.existsSync(configPath)) {
+      return res.status(404).json({ success: false, error: '配置文件不存在' });
+    }
+    
+    const currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 深度合并配置
+    function deepMerge(target: any, source: any): any {
+      const result = { ...target };
+      for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          result[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+          result[key] = source[key];
+        }
+      }
+      return result;
+    }
+    
+    const newConfig = deepMerge(currentConfig, req.body);
+    
+    // 备份原配置
+    const backupPath = `${configPath}.backup-${Date.now()}`;
+    fs.copyFileSync(configPath, backupPath);
+    
+    // 写入新配置
+    fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        message: '配置已更新，需要重启实例生效',
+        backupPath,
+        updatedFields: Object.keys(req.body)
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取实例的模型配置
+app.get('/instances/:name/model-config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        instance: instanceName,
+        model: config.agents?.defaults?.model || { primary: '未配置', fallbacks: [] },
+        providers: config.models?.providers || {}
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 更新实例的模型配置
+app.put('/instances/:name/model-config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const { primary, fallbacks } = req.body;
+    
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 更新模型配置
+    if (!config.agents) config.agents = {};
+    if (!config.agents.defaults) config.agents.defaults = {};
+    
+    config.agents.defaults.model = {
+      primary: primary || 'zai/glm-5',
+      fallbacks: fallbacks || ['zai/glm-4.7', 'zai/glm-4.7-flash']
+    };
+    
+    // 备份并写入
+    const backupPath = `${configPath}.backup-${Date.now()}`;
+    fs.copyFileSync(configPath, backupPath);
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        message: '模型配置已更新，需要重启实例生效',
+        model: config.agents.defaults.model,
+        backupPath
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取实例的 ClawNet 配置
+app.get('/instances/:name/clawnet-config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        instance: instanceName,
+        clawnet: config.clawnet || { enabled: false, forwardWechat: false }
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 更新实例的 ClawNet 配置
+app.put('/instances/:name/clawnet-config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const { forwardWechat, endpoint } = req.body;
+    
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 更新 ClawNet 配置
+    config.clawnet = {
+      forwardWechat: forwardWechat !== undefined ? forwardWechat : true,
+      endpoint: endpoint || 'http://localhost:19100/message'
+    };
+    
+    // 备份并写入
+    const backupPath = `${configPath}.backup-${Date.now()}`;
+    fs.copyFileSync(configPath, backupPath);
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        message: 'ClawNet 配置已更新，需要重启实例生效',
+        clawnet: config.clawnet,
+        backupPath
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

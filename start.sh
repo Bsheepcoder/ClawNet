@@ -13,6 +13,13 @@ fi
 # 加载环境变量
 export $(cat .env | grep -v '^#' | xargs)
 
+# 自动发现主 OpenClaw Gateway
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/scripts/auto-discover-main.js" ]; then
+    echo "🔍 自动发现主 OpenClaw..."
+    node "$SCRIPT_DIR/scripts/auto-discover-main.js" 2>/dev/null
+fi
+
 # 启动服务
 echo "正在启动 ClawNet..."
 echo "端口: $PORT"

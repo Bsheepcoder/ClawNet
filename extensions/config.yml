@@ -1,0 +1,11 @@
+# ClawNet 微信桥接扩展配置
+
+extensions:
+  wechat-bridge:
+    enabled: true
+    config:
+      openclawGateway: ws://localhost:18789
+      clawnetUrl: http://localhost:3000
+      clawnetToken: clawnet-secret-token
+      instanceId: openclaw-qxd
+      targetNode: openclaw-derder
