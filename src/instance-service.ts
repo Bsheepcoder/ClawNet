@@ -211,6 +211,36 @@ export class InstanceManager {
     if (!instance) return null;
     
     await this.updateInstanceStatus(id);
+    
+    // 添加配置信息
+    try {
+      const configPath = id === 'derder' 
+        ? '/root/.openclaw/openclaw.json'
+        : `/root/.openclaw-${id}/openclaw.json`;
+      
+      const fs = require('fs');
+      if (fs.existsSync(configPath)) {
+        const configContent = fs.readFileSync(configPath, 'utf-8');
+        const config = JSON.parse(configContent);
+        
+        // 提取配置信息
+        (instance as any).config = {
+          model: config.agents?.defaults?.model || null,
+          workspace: config.agents?.defaults?.workspace || null,
+          channels: config.channels ? Object.keys(config.channels) : [],
+          plugins: config.plugins?.entries ? Object.keys(config.plugins.entries) : [],
+          clawnet: config.clawnet || null,
+          gateway: {
+            shared: id !== 'derder', // 除了 derder，其他都共享 Gateway
+            port: config.gateway?.port || 18789,
+            bind: config.gateway?.bind || 'lan'
+          }
+        };
+      }
+    } catch (error) {
+      console.warn(`Failed to load config for instance ${id}:`, error);
+    }
+    
     return instance;
   }
 
