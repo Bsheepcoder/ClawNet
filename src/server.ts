@@ -1212,6 +1212,132 @@ app.put('/instances/:name/clawnet-config', async (req: Request, res: Response) =
   }
 });
 
+// ========== 插件管理 API ==========
+
+// 获取实例的插件列表
+app.get('/instances/:name/plugins', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    if (!fs.existsSync(configPath)) {
+      return res.status(404).json({ success: false, error: '实例配置文件不存在' });
+    }
+    
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const plugins = config.plugins?.entries || {};
+    
+    // 获取插件列表
+    const pluginList = Object.keys(plugins).map(name => ({
+      name,
+      enabled: plugins[name]?.enabled || false,
+      version: config.plugins?.installs?.[name]?.version || 'unknown'
+    }));
+    
+    res.json({ success: true, data: pluginList });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 更新插件状态（启用/禁用）
+app.put('/instances/:name/plugins/:pluginName', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const pluginName = req.params.pluginName;
+    const { enabled } = req.body;
+    
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 初始化 plugins.entries
+    if (!config.plugins) config.plugins = {};
+    if (!config.plugins.entries) config.plugins.entries = {};
+    
+    // 更新插件状态
+    if (!config.plugins.entries[pluginName]) {
+      config.plugins.entries[pluginName] = {};
+    }
+    config.plugins.entries[pluginName].enabled = enabled;
+    
+    // 备份并写入
+    const backupPath = `${configPath}.backup-${Date.now()}`;
+    fs.copyFileSync(configPath, backupPath);
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        message: `插件 ${pluginName} 已${enabled ? '启用' : '禁用'}，需要重启实例生效`,
+        plugin: pluginName,
+        enabled,
+        backupPath
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 统一的配置更新 API
+app.put('/instances/:name/config', async (req: Request, res: Response) => {
+  try {
+    const instanceName = req.params.name;
+    const updates = req.body;
+    
+    const configPath = instanceName === 'derder' 
+      ? '/root/.openclaw/openclaw.json'
+      : `/root/.openclaw-${instanceName}/openclaw.json`;
+    
+    const fs = require('fs');
+    if (!fs.existsSync(configPath)) {
+      return res.status(404).json({ success: false, error: '实例配置文件不存在' });
+    }
+    
+    const currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    
+    // 深度合并配置
+    function deepMerge(target: any, source: any): any {
+      const result = { ...target };
+      for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          result[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+          result[key] = source[key];
+        }
+      }
+      return result;
+    }
+    
+    const newConfig = deepMerge(currentConfig, updates);
+    
+    // 备份原配置
+    const backupPath = `${configPath}.backup-${Date.now()}`;
+    fs.copyFileSync(configPath, backupPath);
+    
+    // 写入新配置
+    fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        message: '配置已更新，需要重启实例生效',
+        backupPath,
+        updatedFields: Object.keys(updates)
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ========== 工具 API ==========
 
 app.post('/tokens', (req: Request, res: Response) => {
